@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from ..database import SessionLocal
 from ..models import User
 from ..shemas import OperationsRequest
 from ..repository import wallets as wallet_repository
@@ -44,7 +45,7 @@ def add_expense(db: Session, current_user: User, operation: OperationsRequest):
     db.commit()
     #   Возвращаем информацию об операции
     return {
-        "message": f"Wallet {operation.wallet_name} expense added",
+        "message": "Expense added",
         'wallet': operation.wallet_name,
         'amount': operation.amount,
         'description': operation.description,

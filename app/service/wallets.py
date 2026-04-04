@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from ..database import SessionLocal
 from ..models import User
 from ..shemas import CreateWalletRequest
 from ..repository import wallets as wallet_repository
