@@ -1,10 +1,13 @@
+from datetime import datetime
 from decimal import Decimal
+from typing import Optional
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped
 from sqlalchemy.testing.schema import mapped_column
 
 from app.database import Base
+from app.enum import CurrencyEnum
 
 
 class User(Base):
@@ -22,3 +25,16 @@ class Wallet(Base):
     balance: Mapped[Decimal]
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
 
+    currency: Mapped[CurrencyEnum]
+
+class Operation(Base):
+    __tablename__ = "operation"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    wallet_id: Mapped[int] = mapped_column(ForeignKey("wallet.id"))
+    type: Mapped[str]
+    amount: Mapped[Decimal]
+    currency: Mapped[CurrencyEnum]
+    category: Mapped[Optional[str]] = mapped_column(default=None)
+    subcategory: Mapped[Optional[str]] = mapped_column(default=None)
+    created_at: Mapped[datetime] = mapped_column(default=lambda : datetime.now())

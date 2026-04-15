@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from ..database import SessionLocal
 from ..models import User
-from ..shemas import CreateWalletRequest
+from ..shemas import CreateWalletRequest, WalletResponse
 from ..repository import wallets as wallet_repository
 
 
@@ -26,7 +26,7 @@ def get_balance(db: Session, current_user: User, wallet_name: Optional[str] = No
     wallet = wallet_repository.get_wallet_balance_by_name(db, wallet_name, current_user.id)
     return {'wallet': wallet.name, 'balance': wallet.balance}
 
-def create_wallet(db: Session, current_user: User, wallet: CreateWalletRequest):
+def create_wallet(db: Session, current_user: User, wallet: CreateWalletRequest) -> WalletResponse:
     # Проверяем есть ли такой кошелек
     if wallet_repository.is_wallet_exist(db, wallet.name, current_user.id):
         raise HTTPException(
@@ -34,11 +34,7 @@ def create_wallet(db: Session, current_user: User, wallet: CreateWalletRequest):
             detail=f"Wallet {wallet.name} already exists"
         )
     # Создаем Новый кошелек с начальным балансом
-    wallet = wallet_repository.create_wallet(db, current_user.id, wallet.name, wallet.initial_balance)
+    wallet = wallet_repository.create_wallet(db, current_user.id, wallet.name, wallet.initial_balance, wallet.currency)
     db.commit()
     # Возвращаем информацию о созднанном кошельке
-    return {
-        "message": f"Wallet {wallet.name} created",
-        "wallet": wallet.name,
-        "balance": wallet.balance
-    }
+    return WalletResponse.model_validate(wallet)

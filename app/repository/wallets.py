@@ -4,6 +4,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
+from app.enum import CurrencyEnum
 from app.models import Wallet, User
 
 
@@ -40,10 +41,12 @@ def get_all_wallets(db: Session, user_id:int) -> list[Wallet]:
     #   Возвращаем все кошельки пользователя
     return db.query(Wallet).filter(Wallet.user_id == user_id).all()
 
-def create_wallet(db: Session, user_id:int, wallet_name:str, amount:float) -> Wallet:
+def create_wallet(db: Session, user_id:int, wallet_name:str, amount:Decimal, currency: CurrencyEnum) -> Wallet:
     #   Создаем новый кошелек с указанным балансом
-    wallet = Wallet(name=wallet_name, balance=amount, user_id=user_id)
+    wallet = Wallet(name=wallet_name, balance=amount, user_id=user_id, currency=currency)
     db.add(wallet)
     db.flush()
     return wallet
 
+def get_wallet_by_id(db: Session, user_id: int, wallet_id:int) -> Optional[Wallet]:
+    return db.query(Wallet).filter(Wallet.id == wallet_id, Wallet.user_id == user_id).scalar()
