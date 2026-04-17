@@ -2,6 +2,7 @@ import operator
 
 from fastapi import FastAPI, HTTPException
 from typing import Optional
+from fastapi.staticfiles import StaticFiles
 
 from pydantic import BaseModel, Field, field_validator, ValidationError
 
@@ -19,6 +20,8 @@ app.include_router(wallets_router, prefix="/api/v1", tags=["wallets"])
 app.include_router(operations_router, prefix="/api/v1", tags=["operations"])
 
 app.include_router(users_router, prefix="/api/v1", tags=["users"])
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 #   Создаем все таблицы в базе данных, при старте приложения
 Base.metadata.create_all(bind=engine)

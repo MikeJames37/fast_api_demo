@@ -1,30 +1,31 @@
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import SessionLocal
+from ..enum import CurrencyEnum
 from ..models import User
-from ..shemas import CreateWalletRequest, WalletResponse
+from ..shemas import CreateWalletRequest, WalletResponse, TotalBalance
 from ..repository import wallets as wallet_repository
+from app.service import exchange_service
 
 
-def get_balance(db: Session, current_user: User, wallet_name: Optional[str] = None):
+async def get_total_balance(db: Session, current_user: User) -> TotalBalance:
     # Если имя не указано - считаем общий баланс
-    if wallet_name is None:
-        wallets = wallet_repository.get_all_wallets(db, current_user.id)
-        return {'total balance': sum([w.balance for w in wallets])}
 
-    # Проверяем существует ли кошелек
-    if not wallet_repository.is_wallet_exist(db, wallet_name, current_user.id):
-        raise HTTPException(
-            status_code=404,
-            detail=f"Wallet {wallet_name} not found"
-        )
+    wallets = wallet_repository.get_all_wallets(db, current_user.id)
+    total_balance = Decimal(0)
+    for wallet in wallets:
+        if wallet.currency == CurrencyEnum.RUB:
+            total_balance += wallet.balance
+        else:
+            exchange_rate = await exchange_service.get_exchange_rate(wallet.currency, CurrencyEnum.RUB)
+            total_balance += exchange_rate * wallet.balance
+    return TotalBalance(total_balance=total_balance)
 
-    # Возвращаем баланс конкретного кошелька
-    wallet = wallet_repository.get_wallet_balance_by_name(db, wallet_name, current_user.id)
-    return {'wallet': wallet.name, 'balance': wallet.balance}
+
 
 def create_wallet(db: Session, current_user: User, wallet: CreateWalletRequest) -> WalletResponse:
     # Проверяем есть ли такой кошелек
@@ -38,3 +39,7 @@ def create_wallet(db: Session, current_user: User, wallet: CreateWalletRequest) 
     db.commit()
     # Возвращаем информацию о созднанном кошельке
     return WalletResponse.model_validate(wallet)
+
+def get_all_wallets(db: Session, current_user: User) -> list[WalletResponse]:
+    wallets = wallet_repository.get_all_wallets(db, current_user.id)
+    return [WalletResponse.model_validate(wallet) for wallet in wallets]
